@@ -4,7 +4,7 @@ An AI-powered recommendation app where users describe something they loved **and
 
 Most recommenders treat users as passive signals — what you watched, what you rated, what you abandoned. BecauseILiked treats users as _authors of their own taste_: the "why" is the input, and the explanations for each recommendation are the output.
 
-Live at [because-i-liked.vercel.app](https://because-i-liked.vercel.app).
+Live at [because-i-liked.vercel.app](https://because-i-liked.vercel.app). Might move to a different domain in upcoming phases.
 
 ---
 

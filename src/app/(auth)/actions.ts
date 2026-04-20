@@ -32,9 +32,10 @@ export async function signUp(formData: FormData) {
 export async function signIn(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
+  const next = (formData.get('next') as string) || '/dashboard'
 
   if (!email || !password) {
-    redirect('/sign-in?error=Missing email or password')
+    redirect(`/sign-in?error=Missing email or password&next=${encodeURIComponent(next)}`)
   }
 
   const supabase = await createClient()
@@ -45,27 +46,24 @@ export async function signIn(formData: FormData) {
   })
 
   if (error) {
-    redirect(`/sign-in?error=${encodeURIComponent(error.message)}`)
+    redirect(
+      `/sign-in?error=${encodeURIComponent(error.message)}&next=${encodeURIComponent(next)}`
+    )
   }
 
   revalidatePath('/', 'layout')
-  redirect('/dashboard')
+  redirect(next)
 }
 
-export async function signOut() {
-  const supabase = await createClient()
-  await supabase.auth.signOut()
-  revalidatePath('/', 'layout')
-  redirect('/sign-in')
-}
+export async function signInWithGoogle(formData?: FormData) {
+  const next = (formData?.get('next') as string) || '/dashboard'
 
-export async function signInWithGoogle() {
   const supabase = await createClient()
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   })
 
@@ -76,4 +74,11 @@ export async function signInWithGoogle() {
   if (data.url) {
     redirect(data.url)
   }
+}
+
+export async function signOut() {
+  const supabase = await createClient()
+  await supabase.auth.signOut()
+  revalidatePath('/', 'layout')
+  redirect('/sign-in')
 }

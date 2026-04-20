@@ -7,6 +7,7 @@ export default async function SignInPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const params = await searchParams;
+  const next = params.next ?? '/dashboard';
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -25,6 +26,8 @@ export default async function SignInPage({
         )}
 
         <form action={signIn} className="space-y-4">
+          <input type="hidden" name="next" value={next} />
+
           <div>
             <label htmlFor="email" className="block text-sm font-medium">
               Email
@@ -66,6 +69,8 @@ export default async function SignInPage({
         </div>
 
         <form action={signInWithGoogle}>
+          <input type="hidden" name="next" value={next} />
+
           <button
             type="submit"
             className="w-full py-2 px-4 border border-gray-300 rounded-md hover:bg-gray-50 transition flex items-center justify-center gap-2"

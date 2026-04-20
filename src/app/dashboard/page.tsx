@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { signOut } from '../(auth)/actions';
+import Link from 'next/link';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -27,13 +28,32 @@ export default async function DashboardPage() {
             </button>
           </form>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <p>
+
+        <div className="bg-white p-6 rounded-lg shadow mb-6">
+          <p className="text-sm text-gray-600">
             Signed in as <strong>{user.email}</strong>
           </p>
-          <p className="text-sm text-gray-600 mt-2">
-            User ID: <code className="text-xs">{user.id}</code>
-          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <Link
+            href="/browse"
+            className="bg-white p-6 rounded-lg shadow hover:shadow-md transition block"
+          >
+            <h2 className="font-semibold text-lg">Browse movies</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Find something to love. Click into anything to tell us why.
+            </p>
+          </Link>
+          <Link
+            href="/my/loves"
+            className="bg-white p-6 rounded-lg shadow hover:shadow-md transition block"
+          >
+            <h2 className="font-semibold text-lg">My Loves</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              The things you've added — and your shortcut to recommendations.
+            </p>
+          </Link>
         </div>
       </div>
     </div>

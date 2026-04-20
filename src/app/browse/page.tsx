@@ -19,6 +19,9 @@ export default async function BrowsePage({
   const query = params.q?.trim() ?? '';
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Build the query. We paginate with .range() — Supabase is 0-indexed inclusive.
   const from = (page - 1) * PAGE_SIZE;
@@ -64,12 +67,29 @@ export default async function BrowsePage({
             />
           </form>
           <nav className="flex gap-2">
-            <Link
-              href="/sign-in"
-              className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              Sign in
-            </Link>
+            {user ? (
+              <>
+                <Link
+                  href="/my/loves"
+                  className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  My Loves
+                </Link>
+                <Link
+                  href="/dashboard"
+                  className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Dashboard
+                </Link>
+              </>
+            ) : (
+              <Link
+                href="/sign-in"
+                className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Sign in
+              </Link>
+            )}
           </nav>
         </div>
       </header>
@@ -118,7 +138,10 @@ function MovieCard({
   };
 }) {
   return (
-    <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition">
+    <Link
+      href={`/browse/${item.id}`}
+      className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition block"
+    >
       <div className="aspect-[2/3] bg-gray-200 relative">
         {item.poster_url ? (
           <Image
@@ -141,7 +164,7 @@ function MovieCard({
           {item.themes.length > 0 && ` · ${item.themes.slice(0, 2).join(', ')}`}
         </p>
       </div>
-    </div>
+    </Link>
   );
 }
 

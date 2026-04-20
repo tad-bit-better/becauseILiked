@@ -38,6 +38,12 @@ export default async function HomePage() {
               </Link>
             </>
           )}
+          <Link
+            href="/browse"
+            className="px-6 py-3 bg-white text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50 transition"
+          >
+            Browse movies
+          </Link>
         </div>
       </div>
     </div>

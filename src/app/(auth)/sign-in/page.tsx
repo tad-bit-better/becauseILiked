@@ -4,7 +4,7 @@ import { signIn, signInWithGoogle } from '../actions';
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
   const params = await searchParams;
   const next = params.next ?? '/dashboard';

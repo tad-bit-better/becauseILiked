@@ -4,8 +4,8 @@ setDefaultResultOrder('ipv4first')
 import { config } from 'dotenv'
 config({ path: '.env.local' })
 
-import { fetchPopularMovies, fetchMovieDetails } from './lib/tmdb'
-import { tmdbMovieToItem } from './lib/transform'
+import { fetchPopularShows, fetchShowDetails } from './lib/tmdb'
+import { tmdbShowToItem } from './lib/transform'
 import { createAdminClient } from './lib/supabase'
 import {
   upsertItemBatch,
@@ -19,26 +19,26 @@ const DETAIL_REQUEST_DELAY_MS = 50
 const PAGE_BUFFER = 5
 
 async function main() {
-  console.log(`Starting TMDB film seed — target: ${TARGET_COUNT} movies`)
+  console.log(`Starting TMDB TV seed — target: ${TARGET_COUNT} shows`)
 
   const supabase = createAdminClient()
 
-  // Step 1: Collect unique film IDs
+  // Step 1: Collect unique show IDs
   const pagesNeeded = Math.ceil(TARGET_COUNT / 20) + PAGE_BUFFER
   const seenIds = new Set<number>()
-  const movieIds: number[] = []
+  const showIds: number[] = []
 
-  console.log(`\nStep 1: Fetching up to ${pagesNeeded} pages of popular films...`)
+  console.log(`\nStep 1: Fetching up to ${pagesNeeded} pages of popular shows...`)
   for (let page = 1; page <= pagesNeeded; page++) {
-    if (movieIds.length >= TARGET_COUNT) break
-    const data = await fetchPopularMovies(page)
-    for (const movie of data.results) {
-      if (movieIds.length >= TARGET_COUNT) break
-      if (seenIds.has(movie.id)) continue
-      seenIds.add(movie.id)
-      movieIds.push(movie.id)
+    if (showIds.length >= TARGET_COUNT) break
+    const data = await fetchPopularShows(page)
+    for (const show of data.results) {
+      if (showIds.length >= TARGET_COUNT) break
+      if (seenIds.has(show.id)) continue
+      seenIds.add(show.id)
+      showIds.push(show.id)
     }
-    console.log(`  page ${page}/${pagesNeeded} — collected ${movieIds.length} unique IDs`)
+    console.log(`  page ${page}/${pagesNeeded} — collected ${showIds.length} unique IDs`)
     await sleep(100)
   }
 
@@ -47,15 +47,15 @@ async function main() {
     label: 'Step 2+3',
     batchSize: BATCH_INSERT_SIZE,
     detailDelayMs: DETAIL_REQUEST_DELAY_MS,
-    ids: movieIds,
-    fetchDetail: fetchMovieDetails,
-    toItem: tmdbMovieToItem,
+    ids: showIds,
+    fetchDetail: fetchShowDetails,
+    toItem: tmdbShowToItem,
     upsertBatch: (batch) =>
       upsertItemBatch(supabase, batch, 'tmdb_uid', 'tmdb_id'),
   })
 
   console.log(
-    `\n✅ Film seed complete. ${successCount} items upserted. ${failures} failures.`
+    `\n✅ TV seed complete. ${successCount} items upserted. ${failures} failures.`
   )
 }
 

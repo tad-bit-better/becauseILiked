@@ -1,5 +1,6 @@
 import type { TMDBMovieDetails } from './tmdb'
 import { posterUrl } from './tmdb'
+import type { TMDBShowDetails } from './tmdb'
 
 export interface ItemRow {
   medium: 'film' | 'tv' | 'book' | 'game'
@@ -65,8 +66,59 @@ export function tmdbMovieToItem(movie: TMDBMovieDetails): ItemRow {
     themes,
     tone,
     external_ids: {
-      tmdb_id: movie.id,
-    },
+  tmdb_id: movie.id,
+  tmdb_uid: `film:${movie.id}`,
+},
     poster_url: posterUrl(movie.poster_path),
   }
 }
+
+
+
+export function tmdbShowToItem(show: TMDBShowDetails): ItemRow {
+  const year = show.first_air_date
+    ? parseInt(show.first_air_date.slice(0, 4), 10)
+    : null
+
+  // Showrunners / creators — TV has a dedicated `created_by` field, cleaner than crew
+  const creators = show.created_by.map((c) => ({ role: 'creator', name: c.name }))
+
+  // Top 3 billed cast members
+  const topCast =
+    show.credits?.cast
+      .slice(0, 3)
+      .map((c) => ({ role: 'actor', name: c.name })) ?? []
+
+  // Executive producers are sometimes more influential than "created by" in modern TV
+  const executiveProducers =
+    show.credits?.crew
+      .filter((c) => c.job === 'Executive Producer')
+      .slice(0, 2)
+      .map((c) => ({ role: 'executive_producer', name: c.name })) ?? []
+
+  const themes = show.genres?.map((g) => g.name.toLowerCase()) ?? []
+
+  // TV keywords are nested under .results (different from films)
+  const keywords =
+    show.keywords?.results?.map((k) => k.name.toLowerCase()) ?? []
+
+  const tone = keywords.slice(0, 10)
+
+  return {
+    medium: 'tv',
+    title: show.name,
+    year,
+    creators: [...creators, ...executiveProducers, ...topCast],
+    synopsis: show.overview || null,
+    themes,
+    tone,
+  external_ids: {
+  tmdb_id: show.id,
+  tmdb_uid: `tv:${show.id}`,
+},
+    poster_url: posterUrl(show.poster_path),
+  }
+}
+
+// posterUrl is already exported from ./tmdb; re-export for convenience
+export { posterUrl } from './tmdb'

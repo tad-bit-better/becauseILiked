@@ -29,6 +29,49 @@ export interface TMDBMovieDetails extends TMDBMovie {
   }
 }
 
+
+export interface TMDBShow {
+  id: number
+  name: string                  // TV uses `name`, not `title`
+  original_name: string
+  first_air_date: string        // TV uses `first_air_date`, not `release_date`
+  overview: string
+  poster_path: string | null
+  genre_ids: number[]
+  popularity: number
+  vote_average: number
+  vote_count: number
+}
+
+export interface TMDBShowDetails extends TMDBShow {
+  number_of_seasons: number
+  number_of_episodes: number
+  episode_run_time: number[]    // array because different episodes may differ
+  genres: Array<{ id: number; name: string }>
+  status: string                // "Ended", "Returning Series", "Canceled"
+  created_by: Array<{ id: number; name: string }>
+  credits?: {
+    crew: Array<{ job: string; name: string; department: string; id: number }>
+    cast: Array<{ name: string; character: string; id: number; order: number }>
+  }
+  keywords?: {
+    results: Array<{ id: number; name: string }>  // TV nests under `results`, films under `keywords`
+  }
+}
+
+export async function fetchPopularShows(page: number): Promise<{
+  results: TMDBShow[]
+  total_pages: number
+}> {
+  return tmdbFetch(`/tv/popular?language=en-US&page=${page}`)
+}
+
+export async function fetchShowDetails(showId: number): Promise<TMDBShowDetails> {
+  return tmdbFetch(
+    `/tv/${showId}?language=en-US&append_to_response=credits,keywords`
+  )
+}
+
 // Shared fetch helper with auth + error handling
 async function tmdbFetch<T>(path: string, attempt = 1): Promise<T> {
   const MAX_ATTEMPTS = 5

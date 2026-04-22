@@ -1,6 +1,8 @@
 import type { TMDBMovieDetails } from './tmdb'
 import { posterUrl } from './tmdb'
 import type { TMDBShowDetails } from './tmdb'
+import type { OLSearchDoc, OLWork } from './openLibrary'
+import { coverUrl, normalizeDescription, workIdFromKey } from './openLibrary'
 
 export interface ItemRow {
   medium: 'film' | 'tv' | 'book' | 'game'
@@ -120,5 +122,84 @@ export function tmdbShowToItem(show: TMDBShowDetails): ItemRow {
   }
 }
 
+
+/**
+ * Combine search-doc metadata (which has author/year/cover) with work-detail
+ * metadata (which has description/full subject list) into a single ItemRow.
+ *
+ * We pass both because Open Library's search doesn't return description, and
+ * the work endpoint doesn't return author names (it returns author keys that
+ * would require another fetch to resolve — not worth the round trip for P2).
+ */
+export function olBookToItem(
+  searchDoc: OLSearchDoc,
+  work: OLWork
+): ItemRow {
+  const olid = workIdFromKey(searchDoc.key)
+
+  // Authors from search doc (simpler than resolving from work's author keys)
+  const creators = (searchDoc.author_name ?? [])
+    .slice(0, 3)
+    .map((name) => ({ role: 'author', name }))
+
+  // Themes: prefer the work's subjects list (curated), fall back to search's
+  // tags. Both can be polluted with noise like "Accessible book", "Protected DAISY"
+  // that we filter out.
+  const rawSubjects = work.subjects ?? searchDoc.subject ?? []
+  const themes = rawSubjects
+    .filter(isUsefulSubject)
+    .slice(0, 10)
+    .map((s) => s.toLowerCase())
+
+  // Year: prefer search (first_publish_year is pre-parsed), fall back to work
+  const year =
+    searchDoc.first_publish_year ??
+    (work.first_publish_date ? extractYear(work.first_publish_date) : null)
+
+  // Cover: prefer search (already has cover_i), fall back to work
+  const coverId = searchDoc.cover_i ?? work.covers?.[0] ?? null
+
+  // Synopsis: only comes from work endpoint; may be absent
+  const synopsis = normalizeDescription(work.description)
+
+  return {
+    medium: 'book',
+    title: searchDoc.title || work.title,
+    year,
+    creators,
+    synopsis: synopsis?.slice(0, 2000) ?? null,  // cap length; some OL descriptions are very long
+    themes,
+    tone: [],  // books don't have a keyword system like TMDB; leave empty for P2
+    external_ids: {
+      olid,
+      olid_uid: `book:${olid}`,
+    },
+    poster_url: coverUrl(coverId, 'L'),
+  }
+}
+
+/**
+ * Filter out Open Library's "utility" tags that aren't actual themes.
+ * List built from inspecting real data — expand as needed.
+ */
+function isUsefulSubject(subject: string): boolean {
+  const noisePatterns = [
+    /^accessible book$/i,
+    /^protected daisy$/i,
+    /^in library$/i,
+    /^internet archive wishlist$/i,
+    /^large type books$/i,
+    /^open library staff picks$/i,
+    /^lending library$/i,
+    /^new york times/i,
+    /^overdrive/i,
+  ]
+  return !noisePatterns.some((p) => p.test(subject))
+}
+
+function extractYear(dateStr: string): number | null {
+  const match = dateStr.match(/\b(\d{4})\b/)
+  return match ? parseInt(match[1], 10) : null
+}
 // posterUrl is already exported from ./tmdb; re-export for convenience
 export { posterUrl } from './tmdb'

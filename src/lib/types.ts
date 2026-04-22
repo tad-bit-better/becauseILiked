@@ -18,7 +18,7 @@ export const MEDIUM_SINGULAR: Record<Medium, string> = {
  * Currently active media in the UI. Extend this list as catalogs come online
  * in Phase 2 (books and games pending).
  */
-export const ACTIVE_MEDIA: Medium[] = ['film', 'tv']
+export const ACTIVE_MEDIA: Medium[] = ['film', 'tv', 'book']
 
 export function isValidMedium(value: string | undefined): value is Medium {
   return value === 'film' || value === 'tv' || value === 'book' || value === 'game'

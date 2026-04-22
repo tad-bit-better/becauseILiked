@@ -9,7 +9,8 @@
   "lint": "eslint",
   "seed:tmdb": "tsx scripts/seed-tmdb.ts",
   "seed:tmdb:tv": "tsx scripts/seed-tmdb-tv.ts",
-  "seed:openlibrary": "tsx scripts/seed-openlibrary.ts"
+  "seed:openlibrary": "tsx scripts/seed-openlibrary.ts",
+  "seed:igdb": "tsx scripts/seed-igdb.ts"
 },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",

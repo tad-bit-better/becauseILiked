@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
       hostname: 'covers.openlibrary.org',
       pathname: '/b/id/**',
     },
+    {
+  protocol: 'https',
+  hostname: 'images.igdb.com',
+  pathname: '/igdb/image/upload/**',
+},
     ],
   },
 };

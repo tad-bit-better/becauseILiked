@@ -4,6 +4,10 @@ import type { TMDBShowDetails } from './tmdb'
 import type { OLSearchDoc, OLWork } from './openLibrary'
 import { coverUrl, normalizeDescription, workIdFromKey } from './openLibrary'
 
+import type { IGDBGame } from './igdb'
+import { coverUrl as igdbCoverUrl } from './igdb'
+
+
 export interface ItemRow {
   medium: 'film' | 'tv' | 'book' | 'game'
   title: string
@@ -203,3 +207,63 @@ function extractYear(dateStr: string): number | null {
 }
 // posterUrl is already exported from ./tmdb; re-export for convenience
 export { posterUrl } from './tmdb'
+
+
+
+/**
+ * Transform an IGDB game into our unified ItemRow.
+ *
+ * Design notes:
+ * - IGDB's `themes` and `genres` are distinct concepts we'll merge into our
+ *   single `themes` column (e.g. genre "Role-playing" + theme "Fantasy").
+ * - `keywords` are IGDB's fine-grained tags (e.g. "time travel", "permadeath").
+ *   These are great tone signals, so we route them into our `tone` column.
+ * - We prefer `summary` over `storyline` for synopsis because storylines
+ *   are often spoiler-heavy for story-driven games.
+ */
+export function igdbGameToItem(game: IGDBGame): ItemRow {
+  const year = game.first_release_date
+    ? new Date(game.first_release_date * 1000).getFullYear()
+    : null
+
+  // Developers first (usually more telling than publishers for taste),
+  // then publishers, deduplicated
+  const companies = game.involved_companies ?? []
+  const devs = companies
+    .filter((c) => c.developer)
+    .slice(0, 2)
+    .map((c) => ({ role: 'developer', name: c.company.name }))
+  const pubs = companies
+    .filter((c) => c.publisher && !c.developer)
+    .slice(0, 2)
+    .map((c) => ({ role: 'publisher', name: c.company.name }))
+
+  // Merge IGDB genres + themes into our themes column
+  const genres = game.genres?.map((g) => g.name.toLowerCase()) ?? []
+  const igdbThemes = game.themes?.map((t) => t.name.toLowerCase()) ?? []
+  const modes = game.game_modes?.map((m) => m.name.toLowerCase()) ?? []
+  const themes = Array.from(new Set([...genres, ...igdbThemes, ...modes]))
+
+  // Keywords → tone. Also include top 3 platforms as tone signal.
+  const keywords = game.keywords?.map((k) => k.name.toLowerCase()) ?? []
+  const platforms =
+    game.platforms
+      ?.map((p) => (p.abbreviation ?? p.name).toLowerCase())
+      .slice(0, 3) ?? []
+  const tone = Array.from(new Set([...keywords, ...platforms])).slice(0, 15)
+
+  return {
+    medium: 'game',
+    title: game.name,
+    year,
+    creators: [...devs, ...pubs],
+    synopsis: game.summary?.slice(0, 2000) ?? null,
+    themes: themes.slice(0, 10),
+    tone,
+    external_ids: {
+      igdb_id: game.id,
+      igdb_uid: `game:${game.id}`,
+    },
+    poster_url: igdbCoverUrl(game.cover?.image_id),
+  }
+}

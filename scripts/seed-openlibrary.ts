@@ -16,7 +16,7 @@ import {
   fetchWork,
   workIdFromKey,
   type OLSearchDoc,
-} from './lib/openlibrary'
+} from './lib/openLibrary'
 import { olBookToItem } from './lib/transform'
 
 // Subjects chosen to give breadth across what recommendation users actually want.
